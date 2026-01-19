@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+
+# Build
+out/
+cache/
+artifacts/
+typechain/
+typechain-types/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Foundry
+broadcast/
+
+# Coverage
+coverage/
+coverage.json
+lcov.info
+
+# Misc
+*.log
+*.pdf
+*.zip
+rwa_01
