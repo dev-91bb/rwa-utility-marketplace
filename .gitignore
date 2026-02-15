@@ -25,6 +25,13 @@ Thumbs.db
 # Foundry
 broadcast/
 
+# Tests & Fuzzing
+test/
+echidna/
+echidna.yaml
+echidna-corpus/
+crytic-export/
+
 # Coverage
 coverage/
 coverage.json
@@ -35,3 +42,5 @@ lcov.info
 *.pdf
 *.zip
 rwa_01
+rwa_02
+lib/

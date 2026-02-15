@@ -183,6 +183,7 @@ contract RWACertificate is
     function resolveDispute(uint256 tokenId, AssetStatus newStatus) external onlyRole(DEFAULT_ADMIN_ROLE) {
         Asset storage asset = assets[tokenId];
         if (asset.status != AssetStatus.Disputed) revert InvalidStatus();
+        if (newStatus != AssetStatus.Active && newStatus != AssetStatus.Cancelled) revert InvalidStatus();
         
         asset.status = newStatus;
         asset.statusUpdatedAt = block.timestamp;
@@ -229,7 +230,22 @@ contract RWACertificate is
                assets[tokenId].status == AssetStatus.Fulfilled;
     }
 
-    function getAsset(uint256 tokenId) external view returns (Asset memory) {
+    function getAsset(uint256 tokenId) external view returns (
+        string memory assetType,
+        string memory serialNumber,
+        address vendor,
+        uint256 purchasePrice,
+        uint256 purchaseTime,
+        uint8 status,
+        uint256 statusUpdatedAt,
+        uint256 redemptionFee
+    ) {
+        Asset storage a = assets[tokenId];
+        return (a.assetType, a.serialNumber, a.vendor, a.purchasePrice,
+                a.purchaseTime, uint8(a.status), a.statusUpdatedAt, a.redemptionFee);
+    }
+
+    function getAssetFull(uint256 tokenId) external view returns (Asset memory) {
         return assets[tokenId];
     }
 
@@ -239,6 +255,11 @@ contract RWACertificate is
 
     function totalSupply() external view returns (uint256) {
         return _tokenIdCounter;
+    }
+
+    /// @notice Update token URI (authorized only, for metadata corrections)
+    function updateTokenURI(uint256 tokenId, string calldata uri) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _setTokenURI(tokenId, uri);
     }
 
     function pause() external onlyRole(DEFAULT_ADMIN_ROLE) { _pause(); }

@@ -11,6 +11,7 @@ Tokenized real-world asset marketplace on Binance Smart Chain (BSC).
 | RWAStaking       | Staking with 1/3/6/12 month tiers, per-second APR |
 | RWACertificate   | ERC-721 NFT representing real-world asset ownership |
 | RWAMarketplace   | Primary & secondary market with Chainlink oracles |
+| RWATreasury      | Optional: Unified fee receiver with auto-distribution |
 
 ## Architecture
 
