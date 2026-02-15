@@ -3,6 +3,8 @@
 > Sources: `Alur Teknis Proyek BEP-20.pdf`, `Technical Brief NFT MarketPlace.pdf`
 > Date: 2026-02-14
 
+> ⚠️ **Note (2026-02-15):** This analysis was written before the marketplace rewrite. The marketplace no longer integrates staking, promo/discount, or royalty. Fee splits changed to 90/10 (sale) and 70/20/10 (rental) with 24h escrow. References to `marketingWallet`, `stakingContract`, `royaltyBps`, and promo features are historical.
+
 ---
 
 ## Overview

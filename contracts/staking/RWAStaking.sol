@@ -197,7 +197,7 @@ contract RWAStaking is
         emit Unstaked(msg.sender, stakeId, amount, penalty);
     }
 
-    /// @notice Admin-triggered emergency withdraw for a user: returns principal, forfeits APR, no penalty
+    /// @notice Admin-triggered emergency withdraw for a user: returns principal, no penalty
     function emergencyWithdraw(address user, uint256 stakeId) external nonReentrant onlyRole(DEFAULT_ADMIN_ROLE) updateRevenue(user) {
         Stake storage s = stakes[user][stakeId];
         if (s.amount == 0 || s.withdrawn) revert StakeNotFound();
@@ -216,7 +216,7 @@ contract RWAStaking is
 
     // ============ Revenue Sharing (Synthetix) ============
 
-    /// @notice Marketplace/admin deposits rental income for proportional distribution to stakers
+    /// @notice Deposits revenue for proportional distribution to eligible stakers
     function notifyRewardAmount(uint256 amount) external nonReentrant onlyRole(DISTRIBUTOR_ROLE) {
         if (amount == 0) revert ZeroAmount();
         if (eligibleStaked == 0) revert ZeroAmount();
