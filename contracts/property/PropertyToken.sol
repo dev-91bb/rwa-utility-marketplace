@@ -49,6 +49,7 @@ contract PropertyToken is ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable 
     string public propertyId;
     uint256 public totalValueUSD;
     uint256 public tokenPriceUSD;
+    uint256 public maxSupply;       // hard cap — set at initialize, never changes
 
     /// @dev partition => holder => balance
     mapping(bytes32 => mapping(address => uint256)) private _partitionBalances;
@@ -103,6 +104,7 @@ contract PropertyToken is ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable 
         tokenPriceUSD = tokenPriceUSD_;
         kycRegistry   = kycRegistry_;
         issuable      = true;
+        maxSupply     = totalSupply_;   // hard cap fixed at deploy time
 
         // Issue entire supply to owner in unlocked partition
         _issueByPartition(PARTITION_UNLOCKED, owner_, owner_, totalSupply_, "", "");
@@ -278,6 +280,7 @@ contract PropertyToken is ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable 
     function _issueByPartition(bytes32 partition, address operator, address to, uint256 value, bytes memory data, bytes memory operatorData) internal {
         if (!issuable) revert NotIssuable();
         if (to == address(0)) revert ZeroAddress();
+        if (maxSupply > 0 && totalSupply() + value > maxSupply) revert NotIssuable(); // cap enforced
         _addToPartition(partition, to, value);
         _mint(to, value);
         emit IssuedByPartition(partition, operator, to, value, data, operatorData);
