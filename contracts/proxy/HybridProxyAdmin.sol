@@ -38,6 +38,17 @@ contract HybridProxyAdmin is Ownable2Step {
         emit UpgradeExecuted(proxy, newImplementation);
     }
 
+    function batchUpgrade(address[] calldata proxies, address newImplementation) external onlyOwner {
+        if (newImplementation == address(0)) revert ZeroAddress();
+        if (newImplementation.code.length == 0) revert NotContract(newImplementation);
+        for (uint256 i = 0; i < proxies.length; i++) {
+            if (proxies[i] == address(0)) revert ZeroAddress();
+            if (proxies[i].code.length == 0) revert NotContract(proxies[i]);
+            IUUPSUpgradeable(proxies[i]).upgradeToAndCall(newImplementation, "");
+            emit UpgradeExecuted(proxies[i], newImplementation);
+        }
+    }
+
     function _validateUpgrade(address proxy, address newImplementation) internal view {
         if (proxy == address(0) || newImplementation == address(0)) revert ZeroAddress();
         if (proxy.code.length == 0) revert NotContract(proxy);

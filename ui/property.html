@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Property Detail — PropChain</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .breadcrumb {
+      font-size: 13px;
+      color: var(--text-muted);
+      padding: 16px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .breadcrumb a { color: var(--primary); }
+
+    .detail-hero {
+      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+      height: 360px;
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 96px;
+      margin-bottom: 32px;
+    }
+
+    .detail-layout {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 32px;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      .detail-layout { grid-template-columns: 1fr; }
+    }
+
+    /* LEFT COLUMN */
+    .detail-header { margin-bottom: 24px; }
+    .detail-location { font-size: 14px; color: var(--text-muted); margin-bottom: 6px; }
+    .detail-title { font-size: 32px; font-weight: 800; letter-spacing: -.5px; margin-bottom: 12px; }
+    .detail-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .info-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+
+    .info-card label {
+      display: block;
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      margin-bottom: 6px;
+    }
+
+    .info-card span {
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .section-block { margin-bottom: 32px; }
+    .section-block h3 { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+
+    .description-text {
+      font-size: 15px;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    .property-specs {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .spec-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: var(--bg);
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .spec-row label { color: var(--text-muted); }
+    .spec-row span { font-weight: 600; }
+
+    .on-chain-box {
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: var(--radius);
+      padding: 16px;
+      font-size: 13px;
+    }
+    .on-chain-box h4 { color: #fff; font-size: 14px; margin-bottom: 12px; }
+    .on-chain-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .on-chain-row label { color: #64748b; }
+    .on-chain-row span { font-family: monospace; color: #7dd3fc; }
+
+    /* RIGHT COLUMN — INVEST WIDGET */
+    .invest-widget {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      position: sticky;
+      top: 80px;
+    }
+
+    .widget-price {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .widget-price-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .widget-progress { margin-bottom: 20px; }
+
+    .widget-input-label {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .token-input-row {
+      display: flex;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .token-input-row button {
+      width: 40px;
+      background: var(--bg);
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .token-input-row input {
+      flex: 1;
+      border: none;
+      text-align: center;
+      font-size: 18px;
+      font-weight: 700;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .widget-total {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .widget-total strong { color: var(--text); font-size: 16px; }
+
+    .widget-yield-preview {
+      background: var(--green-bg);
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 20px;
+      font-size: 13px;
+    }
+
+    .widget-yield-preview .yield-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .widget-yield-preview .yield-row:last-child { margin-bottom: 0; }
+    .widget-yield-preview label { color: var(--text-muted); }
+    .widget-yield-preview span { font-weight: 700; color: var(--green); }
+
+    .btn-invest {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      border-radius: 10px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-invest:hover { background: var(--primary-dark); }
+    .btn-invest:disabled { background: #94a3b8; cursor: not-allowed; }
+
+    .widget-disclaimer {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: 12px;
+      line-height: 1.5;
+    }
+
+    .widget-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 20px 0;
+    }
+
+    .widget-meta { font-size: 13px; }
+    .widget-meta-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      color: var(--text-muted);
+    }
+    .widget-meta-row span { color: var(--text); font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">PropChain</div>
+  <ul class="nav-links">
+    <li><a href="index.html">Properties</a></li>
+    <li><a href="#">How It Works</a></li>
+    <li><a href="#">Portfolio</a></li>
+    <li><a href="#">About</a></li>
+  </ul>
+  <div class="nav-actions">
+    <button class="btn btn-outline">Log In</button>
+    <button class="btn btn-primary">Get Started</button>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="breadcrumb">
+    <a href="index.html">Properties</a> › <span id="breadcrumb-name">Loading...</span>
+  </div>
+
+  <!-- HERO IMAGE -->
+  <div class="detail-hero" id="detail-hero">⏳</div>
+
+  <div class="detail-layout">
+    <!-- LEFT -->
+    <div>
+      <div class="detail-header">
+        <div class="detail-location" id="detail-location"></div>
+        <div class="detail-title" id="detail-title"></div>
+        <div class="detail-tags" id="detail-tags"></div>
+      </div>
+
+      <!-- KEY METRICS -->
+      <div class="info-grid" id="info-grid"></div>
+
+      <!-- DESCRIPTION -->
+      <div class="section-block">
+        <h3>About This Property</h3>
+        <p class="description-text" id="detail-description"></p>
+      </div>
+
+      <!-- PROPERTY SPECS -->
+      <div class="section-block">
+        <h3>Property Details</h3>
+        <div class="property-specs" id="property-specs"></div>
+      </div>
+
+      <!-- ON-CHAIN INFO -->
+      <div class="section-block">
+        <h3>On-Chain Information</h3>
+        <div class="on-chain-box" id="on-chain-box"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT — INVEST WIDGET -->
+    <div>
+      <div class="invest-widget" id="invest-widget"></div>
+    </div>
+  </div>
+</div>
+
+<footer style="margin-top:80px;">
+  <div class="container">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-logo">PropChain</div>
+        <p style="margin-top:8px;font-size:13px;">Tokenized real estate on BNB Chain.</p>
+      </div>
+      <p style="font-size:13px;">© 2026 PropChain. Mock UI only — not financial advice.</p>
+    </div>
+  </div>
+</footer>
+
+<script src="data.js"></script>
+<script>
+  const params = new URLSearchParams(location.search);
+  const id = params.get('id');
+  const p = PROPERTIES.find(x => x.id === id);
+
+  if (!p) {
+    document.body.innerHTML = '<div style="padding:80px;text-align:center;"><h2>Property not found.</h2><a href="index.html">← Back</a></div>';
+  } else {
+    render(p);
+  }
+
+  function render(p) {
+    const pct = getFundedPct(p);
+    const isSoldOut = p.status === 'Sold Out';
+
+    document.title = `${p.name} — PropChain`;
+    document.getElementById('breadcrumb-name').textContent = p.name;
+    document.getElementById('detail-hero').textContent = p.emoji;
+    document.getElementById('detail-location').innerHTML = `📍 ${p.location} · <strong>${p.type}</strong>`;
+    document.getElementById('detail-title').textContent = p.name;
+    document.getElementById('detail-description').textContent = p.description;
+
+    // Tags
+    document.getElementById('detail-tags').innerHTML = p.tags.map(t =>
+      `<span class="badge badge-blue">${t}</span>`
+    ).join('') + `<span class="badge ${isSoldOut ? 'badge-green' : 'badge-green'}">${isSoldOut ? '🔴 Sold Out' : '🟢 Open'}</span>`;
+
+    // Key metrics
+    document.getElementById('info-grid').innerHTML = `
+      <div class="info-card">
+        <label>Property Value</label>
+        <span>${formatUSD(p.totalValueUSD)}</span>
+      </div>
+      <div class="info-card">
+        <label>Annual Yield</label>
+        <span style="color:var(--green)">${p.annualYield}%</span>
+      </div>
+      <div class="info-card">
+        <label>Token Price</label>
+        <span>$${p.tokenPriceUSD}</span>
+      </div>
+      <div class="info-card">
+        <label>Total Tokens</label>
+        <span>${p.totalTokens.toLocaleString()}</span>
+      </div>
+      <div class="info-card">
+        <label>Tokens Sold</label>
+        <span>${p.soldTokens.toLocaleString()}</span>
+      </div>
+      <div class="info-card">
+        <label>Funded</label>
+        <span>${pct}%</span>
+      </div>
+    `;
+
+    // Specs
+    const d = p.details;
+    document.getElementById('property-specs').innerHTML = [
+      ['Bedrooms', d.bedrooms],
+      ['Bathrooms', d.bathrooms],
+      ['Land Size', d.landSize],
+      ['Building Size', d.buildingSize],
+      ['Year Built', d.yearBuilt],
+      ['Occupancy Rate', d.occupancyRate],
+      ['Managed By', d.managedBy],
+      ['Network', p.network],
+    ].map(([k, v]) => `
+      <div class="spec-row">
+        <label>${k}</label>
+        <span>${v}</span>
+      </div>
+    `).join('');
+
+    // On-chain
+    document.getElementById('on-chain-box').innerHTML = `
+      <h4>🔗 On-Chain Data</h4>
+      <div class="on-chain-row"><label>Token Contract</label><span>${p.tokenAddress}</span></div>
+      <div class="on-chain-row"><label>Network</label><span>${p.network}</span></div>
+      <div class="on-chain-row"><label>Property ID</label><span>${p.id}</span></div>
+      <div class="on-chain-row"><label>Standard</label><span>ERC-20 (Hybrid Proxy)</span></div>
+      <div class="on-chain-row"><label>KYC Required</label><span>Yes — verified once</span></div>
+    `;
+
+    // Invest widget
+    renderWidget(p, pct, isSoldOut);
+  }
+
+  function renderWidget(p, pct, isSoldOut) {
+    document.getElementById('invest-widget').innerHTML = `
+      <div class="widget-price">$${p.tokenPriceUSD} <span style="font-size:16px;color:var(--text-muted);font-weight:500;">/ token</span></div>
+      <div class="widget-price-sub">Min. 1 token · ${formatUSD(p.totalValueUSD)} total property value</div>
+
+      <div class="widget-progress">
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <div class="progress-label">
+          <span>${pct}% funded</span>
+          <span>${(p.totalTokens - p.soldTokens).toLocaleString()} left</span>
+        </div>
+      </div>
+
+      <label class="widget-input-label">Number of Tokens</label>
+      <div class="token-input-row">
+        <button onclick="changeQty(-1)">−</button>
+        <input type="number" id="qty-input" value="10" min="1" max="${p.totalTokens - p.soldTokens}" oninput="updateTotal()" />
+        <button onclick="changeQty(1)">+</button>
+      </div>
+
+      <div class="widget-total">
+        <span>Total Investment</span>
+        <strong id="total-display">$${p.tokenPriceUSD * 10}</strong>
+      </div>
+
+      <div class="widget-yield-preview" id="yield-preview"></div>
+
+      <button class="btn-invest" ${isSoldOut ? 'disabled' : ''} onclick="handleInvest()">
+        ${isSoldOut ? 'Sold Out' : 'Invest Now'}
+      </button>
+      <p class="widget-disclaimer">By investing you agree to our Terms. KYC verification required before tokens are transferred.</p>
+
+      <hr class="widget-divider" />
+
+      <div class="widget-meta">
+        <div class="widget-meta-row"><span>Annual Yield</span><span style="color:var(--green)">${p.annualYield}%</span></div>
+        <div class="widget-meta-row"><span>Distribution</span><span>Monthly</span></div>
+        <div class="widget-meta-row"><span>Property ID</span><span>${p.id}</span></div>
+      </div>
+    `;
+
+    updateTotal();
+  }
+
+  function changeQty(delta) {
+    const input = document.getElementById('qty-input');
+    const val = Math.max(1, parseInt(input.value || 1) + delta);
+    input.value = val;
+    updateTotal();
+  }
+
+  function updateTotal() {
+    const qty = parseInt(document.getElementById('qty-input').value) || 1;
+    const total = qty * p.tokenPriceUSD;
+    const annualYield = total * (p.annualYield / 100);
+    const monthlyYield = annualYield / 12;
+
+    document.getElementById('total-display').textContent = `$${total.toLocaleString()}`;
+    document.getElementById('yield-preview').innerHTML = `
+      <div class="yield-row"><label>Est. Annual Income</label><span>$${annualYield.toFixed(2)}</span></div>
+      <div class="yield-row"><label>Est. Monthly Income</label><span>$${monthlyYield.toFixed(2)}</span></div>
+      <div class="yield-row"><label>Ownership Share</label><span>${((qty / p.totalTokens) * 100).toFixed(4)}%</span></div>
+    `;
+  }
+
+  function handleInvest() {
+    alert('Connect your wallet to proceed. (Mock UI — no real transaction)');
+  }
+</script>
+</body>
+</html>

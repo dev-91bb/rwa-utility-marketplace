@@ -1,0 +1,11 @@
+⚠ What Must Be Fixed Before Build
+
+Unify payment distribution
+
+Enforce staking lock logic
+
+Separate asset classes clearly
+
+Pick escrow vs instant settlement
+
+Clarify oracle responsibility

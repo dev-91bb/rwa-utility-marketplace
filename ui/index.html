@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PropChain — Fractional Property Investment</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* HERO */
+    .hero {
+      background: linear-gradient(135deg, #1e3a8a 0%, #1a56db 60%, #0ea5e9 100%);
+      color: #fff;
+      padding: 72px 0 80px;
+    }
+    .hero-inner { max-width: 640px; }
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.25);
+      border-radius: 99px;
+      padding: 4px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-size: 48px;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -1px;
+      margin-bottom: 16px;
+    }
+    .hero p {
+      font-size: 18px;
+      opacity: .85;
+      margin-bottom: 32px;
+      line-height: 1.6;
+    }
+    .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-white {
+      background: #fff;
+      color: var(--primary);
+      padding: 12px 28px;
+      font-size: 15px;
+    }
+    .btn-ghost {
+      background: rgba(255,255,255,.15);
+      color: #fff;
+      border: 1.5px solid rgba(255,255,255,.35);
+      padding: 12px 28px;
+      font-size: 15px;
+    }
+    .hero-trust {
+      margin-top: 40px;
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      opacity: .8;
+    }
+    .hero-trust span { display: flex; align-items: center; gap: 6px; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">PropChain</div>
+  <ul class="nav-links">
+    <li><a href="index.html">Properties</a></li>
+    <li><a href="#">How It Works</a></li>
+    <li><a href="#">Portfolio</a></li>
+    <li><a href="#">About</a></li>
+  </ul>
+  <div class="nav-actions">
+    <button class="btn btn-outline">Log In</button>
+    <button class="btn btn-primary">Get Started</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-inner">
+      <div class="hero-eyebrow">🇮🇩 Indonesia's RWA Platform</div>
+      <h1>Own a Piece of Premium Property</h1>
+      <p>Invest in tokenized real estate starting from $15. Earn rental yield, track performance on-chain.</p>
+      <div class="hero-actions">
+        <button class="btn btn-white">Browse Properties</button>
+        <button class="btn btn-ghost">Learn How It Works →</button>
+      </div>
+      <div class="hero-trust">
+        <span>✅ OJK Regulated</span>
+        <span>🔒 On-Chain Ownership</span>
+        <span>💰 Avg 8.5% Annual Yield</span>
+        <span>👥 100K+ Investors</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="container">
+    <div class="stats-bar-inner">
+      <div class="stat-block">
+        <label>Total Properties</label>
+        <span>24</span>
+      </div>
+      <div class="stat-block">
+        <label>Assets Under Management</label>
+        <span>$12.4M</span>
+      </div>
+      <div class="stat-block">
+        <label>Avg Annual Yield</label>
+        <span>8.5%</span>
+      </div>
+      <div class="stat-block">
+        <label>Total Investors</label>
+        <span>100K+</span>
+      </div>
+      <div class="stat-block">
+        <label>Min. Investment</label>
+        <span>$15</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LISTINGS -->
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">Available Properties</h2>
+      <a href="#" style="font-size:14px;color:var(--primary);font-weight:600;">View All →</a>
+    </div>
+
+    <!-- FILTER TABS -->
+    <div class="filter-tabs">
+      <button class="filter-tab active" onclick="filterProperties('all', this)">All</button>
+      <button class="filter-tab" onclick="filterProperties('Villa', this)">Villas</button>
+      <button class="filter-tab" onclick="filterProperties('Apartment', this)">Apartments</button>
+      <button class="filter-tab" onclick="filterProperties('House', this)">Houses</button>
+      <button class="filter-tab" onclick="filterProperties('active', this)">Available</button>
+    </div>
+
+    <div class="property-grid" id="property-grid"></div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section" style="background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+  <div class="container">
+    <h2 class="section-title" style="text-align:center;margin-bottom:40px;">How It Works</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:32px;text-align:center;">
+      <div>
+        <div style="font-size:36px;margin-bottom:12px;">🔍</div>
+        <h3 style="font-weight:700;margin-bottom:8px;">1. Browse</h3>
+        <p style="font-size:14px;color:var(--text-muted);">Explore curated properties with full financial details and on-chain data.</p>
+      </div>
+      <div>
+        <div style="font-size:36px;margin-bottom:12px;">✅</div>
+        <h3 style="font-weight:700;margin-bottom:8px;">2. Verify KYC</h3>
+        <p style="font-size:14px;color:var(--text-muted);">Complete a one-time identity check. Verified once, invest in any property.</p>
+      </div>
+      <div>
+        <div style="font-size:36px;margin-bottom:12px;">🪙</div>
+        <h3 style="font-weight:700;margin-bottom:8px;">3. Buy Tokens</h3>
+        <p style="font-size:14px;color:var(--text-muted);">Purchase fractional tokens representing your ownership share on BNB Chain.</p>
+      </div>
+      <div>
+        <div style="font-size:36px;margin-bottom:12px;">💸</div>
+        <h3 style="font-weight:700;margin-bottom:8px;">4. Earn Yield</h3>
+        <p style="font-size:14px;color:var(--text-muted);">Receive rental income proportional to your token holdings, distributed monthly.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-logo">PropChain</div>
+        <p style="margin-top:8px;font-size:13px;">Tokenized real estate on BNB Chain.</p>
+      </div>
+      <p style="font-size:13px;">© 2026 PropChain. Mock UI only — not financial advice.</p>
+    </div>
+  </div>
+</footer>
+
+<script src="data.js"></script>
+<script>
+  let activeFilter = 'all';
+
+  function renderCard(p) {
+    const pct = getFundedPct(p);
+    const isSoldOut = p.status === 'Sold Out';
+    const tagHtml = p.tags.map(t =>
+      `<span class="badge ${t === 'Sold Out' ? 'badge-green' : t === 'High Yield' ? 'badge-green' : 'badge-blue'}">${t}</span>`
+    ).join('');
+
+    return `
+      <div class="card" onclick="location.href='property.html?id=${p.id}'">
+        <div class="card-img">${p.emoji}</div>
+        <div class="card-body">
+          <div class="card-location">📍 ${p.location} · ${p.type}</div>
+          <div class="card-title">${p.name}</div>
+          <div class="card-stats">
+            <div class="stat-item">
+              <label>Property Value</label>
+              <span>${formatUSD(p.totalValueUSD)}</span>
+            </div>
+            <div class="stat-item">
+              <label>Annual Yield</label>
+              <span style="color:var(--green)">${p.annualYield}%</span>
+            </div>
+            <div class="stat-item">
+              <label>Token Price</label>
+              <span>$${p.tokenPriceUSD}</span>
+            </div>
+            <div class="stat-item">
+              <label>Status</label>
+              <span style="font-size:13px">${isSoldOut ? '🔴 Sold Out' : '🟢 Open'}</span>
+            </div>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:${pct}%"></div>
+          </div>
+          <div class="progress-label">
+            <span>${pct}% funded</span>
+            <span>${(p.totalTokens - p.soldTokens).toLocaleString()} tokens left</span>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap;">${tagHtml}</div>
+        </div>
+      </div>`;
+  }
+
+  function filterProperties(filter, btn) {
+    activeFilter = filter;
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+
+    const filtered = PROPERTIES.filter(p => {
+      if (filter === 'all') return true;
+      if (filter === 'active') return p.status === 'Active';
+      return p.type === filter;
+    });
+
+    document.getElementById('property-grid').innerHTML = filtered.map(renderCard).join('');
+  }
+
+  // Initial render
+  document.getElementById('property-grid').innerHTML = PROPERTIES.map(renderCard).join('');
+</script>
+</body>
+</html>
