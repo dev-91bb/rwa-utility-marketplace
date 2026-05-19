@@ -20,6 +20,18 @@ HybridProxyAdmin (Ownable2Step)
         └── RWAStaking         (lock tiers, currently disabled in marketplace)
 ```
 
+## Token Standards
+
+| Contract | Standard | Notes |
+|---|---|---|
+| `RWAToken` | **BEP-20** (ERC-20) | Utility token with burn + permit. BNB Chain compatible. |
+| `PropertyToken` | **ERC-1400** (Security Token) | Fractional ownership token per property. Partition-based locking, operator authorization, issuance/redemption hooks, KYC transfer restrictions via ERC-1066 reason codes. |
+| `RWACertificate` | **BEP-721** (ERC-721) | NFT ownership certificate with URI storage and status lifecycle. |
+
+> BEP-20 and BEP-721 are BNB Chain's equivalents of ERC-20 and ERC-721. ERC-1400 is the security token standard — PropertyToken implements the full interface including partitions (`unlocked` / `locked`), operator management, and `canTransfer()` with ERC-1066 reason codes.
+
+---
+
 All contracts use the **Hybrid Proxy pattern**: immutable `_proxyAdmin` baked into implementation bytecode at deploy time — immune to front-running/MEV attacks.
 
 ---
