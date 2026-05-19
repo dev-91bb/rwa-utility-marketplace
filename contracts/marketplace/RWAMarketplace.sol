@@ -18,15 +18,27 @@ interface IRWACertificate {
         address vendor,
         uint256 purchasePrice
     ) external returns (uint256);
+    function burn(uint256 tokenId) external;
+    function ownerOf(uint256 tokenId) external view returns (address);
+}
+
+interface IPropertyToken {
+    function transferWithData(address to, uint256 value, bytes calldata data) external;
+    function transferFromWithData(address from, address to, uint256 value, bytes calldata data) external;
+    function canTransfer(address to, uint256 value, bytes calldata data) external view returns (bytes1, bytes32);
+    function propertyId() external view returns (string memory);
 }
 
 /**
  * @title RWAMarketplace
- * @notice Listing-first marketplace with 6h price freshness, 24h escrow, dispute resolution
+ * @notice Listing-first marketplace with 6h price freshness, 24h escrow, dispute resolution.
+ *         Supports both ERC-721 NFT asset listings and ERC-1400 PropertyToken listings.
  *
- * All items must be listed before purchase. Prices in tokens.
- * Sale:   90% seller / 10% admin — escrowed 24h
- * Rental: 70% owner / 20% company / 10% admin — full upfront, escrowed 24h
+ * NFT Sale:      90% seller / 10% admin — escrowed 24h
+ * NFT Rental:    70% owner / 20% company / 10% admin — full upfront, escrowed 24h
+ * Token Sale:    90% seller / 10% admin — escrowed 24h
+ *                On purchase: RWACertificate minted as proof of investment
+ *                On resale:   seller's certificate burned, buyer gets new one
  */
 contract RWAMarketplace is
     AccessControlUpgradeable,
@@ -54,6 +66,8 @@ contract RWAMarketplace is
     error EscrowFrozen();
     error NothingToClaim();
     error EscrowNotFrozen();
+    error TransferRestricted(bytes1 reasonCode);
+    error NotPropertyTokenListing();
 
     // ============ Constants & Roles ============
     bytes32 public constant VENDOR_ROLE = keccak256("VENDOR_ROLE");
@@ -63,7 +77,7 @@ contract RWAMarketplace is
 
     // ============ Enums & Structs ============
     enum AssetCategory { DIRECT_SALE, RENTAL }
-    enum ListingType { PRIMARY, SECONDARY }
+    enum ListingType { PRIMARY, SECONDARY, PROPERTY_TOKEN }
     enum EscrowStatus { HELD, CLAIMABLE, FROZEN, RESOLVED }
 
     struct Listing {
@@ -73,14 +87,16 @@ contract RWAMarketplace is
         AssetCategory category;
         ListingType listingType;
         bool active;
-        // Primary-only fields
+        // Primary/Secondary NFT fields
         string assetType;
         string serialNumber;
         string uri;
-        // Secondary-only: tokenId of existing NFT
-        uint256 tokenId;
-        // Rental-only fields
-        uint256 rentalDuration;   // seconds (e.g., 30 days)
+        uint256 tokenId;          // Secondary NFT tokenId
+        uint256 rentalDuration;   // seconds
+        // PropertyToken fields
+        address propertyToken;    // ERC-1400 token contract
+        uint256 tokenAmount;      // number of property tokens being sold
+        uint256 sellerCertId;     // seller's RWACertificate tokenId (burned on sale)
     }
 
     struct RentalInfo {
@@ -131,6 +147,8 @@ contract RWAMarketplace is
     event EscrowFrozenEvt(uint256 indexed escrowId);
     event EscrowResolved(uint256 indexed escrowId, address indexed to, uint256 amount);
     event TokensRescued(address indexed token, uint256 amount);
+    event PropertyTokenListed(uint256 indexed listingId, address indexed seller, address indexed propertyToken, uint256 tokenAmount, uint256 price);
+    event PropertyTokenSold(uint256 indexed listingId, address indexed buyer, address indexed propertyToken, uint256 tokenAmount, uint256 escrowId, uint256 newCertId);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address proxyAdmin_) {
@@ -249,9 +267,103 @@ contract RWAMarketplace is
 
         if (l.listingType == ListingType.SECONDARY) {
             IERC721(address(certificate)).transferFrom(address(this), msg.sender, l.tokenId);
+        } else if (l.listingType == ListingType.PROPERTY_TOKEN) {
+            // Return escrowed property tokens to seller
+            IPropertyToken(l.propertyToken).transferWithData(msg.sender, l.tokenAmount, "");
         }
 
         emit Delisted(listingId);
+    }
+
+    // ============ Property Token Listings (ERC-1400 secondary market) ============
+
+    /**
+     * @notice Seller lists their ERC-1400 PropertyTokens for sale.
+     * @param propertyToken_  Address of the PropertyToken proxy
+     * @param tokenAmount_    Number of property tokens to sell
+     * @param price_          Total asking price in payment tokens
+     * @param sellerCertId_   Seller's RWACertificate tokenId (0 if none — primary distribution)
+     * @dev Seller must approve this contract to transferFrom their PropertyTokens.
+     *      Tokens are held in escrow by this contract until sold or delisted.
+     */
+    function listPropertyTokens(
+        address propertyToken_,
+        uint256 tokenAmount_,
+        uint256 price_,
+        uint256 sellerCertId_
+    ) external nonReentrant whenNotPaused {
+        if (propertyToken_ == address(0)) revert ZeroAddress();
+        if (tokenAmount_ == 0 || price_ == 0) revert ZeroAmount();
+
+        // Verify KYC allows transfer to this contract
+        (bytes1 code,) = IPropertyToken(propertyToken_).canTransfer(address(this), tokenAmount_, "");
+        if (code != 0x51) revert TransferRestricted(code);
+
+        // Pull property tokens into escrow
+        IPropertyToken(propertyToken_).transferFromWithData(msg.sender, address(this), tokenAmount_, "");
+
+        uint256 listingId = ++_listingIdCounter;
+        Listing storage l = listings[listingId];
+        l.seller         = msg.sender;
+        l.price          = price_;
+        l.priceUpdatedAt = block.timestamp;
+        l.category       = AssetCategory.DIRECT_SALE;
+        l.listingType    = ListingType.PROPERTY_TOKEN;
+        l.active         = true;
+        l.propertyToken  = propertyToken_;
+        l.tokenAmount    = tokenAmount_;
+        l.sellerCertId   = sellerCertId_;
+
+        emit PropertyTokenListed(listingId, msg.sender, propertyToken_, tokenAmount_, price_);
+        emit Listed(listingId, msg.sender, price_, AssetCategory.DIRECT_SALE, ListingType.PROPERTY_TOKEN);
+    }
+
+    /**
+     * @notice Buy listed PropertyTokens.
+     *         - Seller's RWACertificate is burned (if they had one)
+     *         - Buyer receives PropertyTokens + new RWACertificate as proof
+     *         - Payment escrowed 24h: 90% seller / 10% admin
+     */
+    function buyPropertyTokens(uint256 listingId, string calldata certUri) external nonReentrant whenNotPaused {
+        Listing storage l = listings[listingId];
+        if (!l.active) revert ListingNotActive();
+        if (l.listingType != ListingType.PROPERTY_TOKEN) revert NotPropertyTokenListing();
+        if (msg.sender == l.seller) revert SelfBuy();
+        _requireFreshPrice(l.priceUpdatedAt);
+
+        // Verify buyer is KYC'd
+        (bytes1 code,) = IPropertyToken(l.propertyToken).canTransfer(msg.sender, l.tokenAmount, "");
+        if (code != 0x51) revert TransferRestricted(code);
+
+        l.active = false;
+        uint256 price = l.price;
+
+        // Collect payment
+        paymentToken.safeTransferFrom(msg.sender, address(this), price);
+
+        // Escrow: 90% seller / 10% admin
+        uint256 escrowId = _createSaleEscrow(l.seller, price);
+
+        // Transfer property tokens to buyer
+        IPropertyToken(l.propertyToken).transferWithData(msg.sender, l.tokenAmount, "");
+
+        // Burn seller's certificate if they had one
+        if (l.sellerCertId != 0) {
+            certificate.burn(l.sellerCertId);
+        }
+
+        // Mint new certificate for buyer as proof of investment
+        string memory propId = IPropertyToken(l.propertyToken).propertyId();
+        uint256 newCertId = certificate.mint(
+            msg.sender,
+            certUri,
+            "PROPERTY_TOKEN",
+            propId,
+            l.seller,
+            price
+        );
+
+        emit PropertyTokenSold(listingId, msg.sender, l.propertyToken, l.tokenAmount, escrowId, newCertId);
     }
 
     // ============ Purchase (Sale) ============
