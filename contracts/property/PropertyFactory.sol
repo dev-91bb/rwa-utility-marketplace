@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
-import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 
 interface IPropertyRegistry {
     function register(string calldata propertyId, address proxy) external;
@@ -10,29 +10,27 @@ interface IPropertyRegistry {
 
 /**
  * @title PropertyFactory
- * @notice Deploys a new ERC1967Proxy per property listing, all pointing to the same
- *         PropertyToken implementation. Registers each proxy in PropertyRegistry.
- * @dev The PropertyToken implementation must be deployed with the shared HybridProxyAdmin
- *      address baked in as immutable. All proxies upgrade together via batchUpgrade().
+ * @notice Deploys a BeaconProxy per property listing. All proxies share the same
+ *         implementation via PropertyBeacon — one beacon upgrade updates all properties.
  */
 contract PropertyFactory is Ownable2Step {
     error ZeroAddress();
     error EmptyPropertyId();
 
-    address public immutable implementation;
+    address public immutable beacon;
     address public immutable registry;
 
     event PropertyDeployed(string indexed propertyId, address indexed proxy);
 
-    constructor(address implementation_, address registry_, address owner_) Ownable(owner_) {
-        if (implementation_ == address(0) || registry_ == address(0) || owner_ == address(0))
+    constructor(address beacon_, address registry_, address owner_) Ownable(owner_) {
+        if (beacon_ == address(0) || registry_ == address(0) || owner_ == address(0))
             revert ZeroAddress();
-        implementation = implementation_;
+        beacon   = beacon_;
         registry = registry_;
     }
 
     /**
-     * @notice Deploy a new PropertyToken proxy and register it.
+     * @notice Deploy a new PropertyToken BeaconProxy and register it.
      * @param name_          ERC20 name
      * @param symbol_        ERC20 symbol
      * @param propertyId_    Unique property identifier
@@ -60,7 +58,7 @@ contract PropertyFactory is Ownable2Step {
             kycRegistry_, tokenOwner_
         );
 
-        proxy = address(new ERC1967Proxy(implementation, initData));
+        proxy = address(new BeaconProxy(beacon, initData));
         IPropertyRegistry(registry).register(propertyId_, proxy);
         emit PropertyDeployed(propertyId_, proxy);
     }

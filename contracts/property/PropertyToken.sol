@@ -3,22 +3,22 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 /**
  * @title PropertyToken
  * @notice ERC-1400 security token for fractional property ownership.
  *         Implements transfer restrictions (KYC), partition-based locking,
  *         operator authorization, and issuance/redemption hooks.
- * @dev Hybrid proxy pattern: immutable _proxyAdmin set in constructor.
+ * @dev Beacon proxy pattern: one implementation shared by all PropertyToken BeaconProxies.
+ *      Upgrading PropertyBeacon upgrades all proxies in one transaction.
  *      Partitions: bytes32("unlocked") = freely transferable (KYC required)
  *                  bytes32("locked")   = non-transferable (vesting / lock-up)
  */
-contract PropertyToken is ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable {
+contract PropertyToken is ERC20Upgradeable, OwnableUpgradeable {
 
     // ============ Errors ============
     error ZeroAddress();
-    error OnlyProxyAdmin();
     error TransferRestricted(bytes1 reasonCode);
     error NotIssuable();
     error InvalidPartition(bytes32 partition);
@@ -37,10 +37,6 @@ contract PropertyToken is ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable 
     // ============ Partitions ============
     bytes32 public constant PARTITION_UNLOCKED = bytes32("unlocked");
     bytes32 public constant PARTITION_LOCKED   = bytes32("locked");
-
-    // ============ Hybrid Proxy ============
-    address private immutable _proxyAdmin;
-    uint256 public constant VERSION = 1;
 
     // ============ ERC-1400 State ============
     address public kycRegistry;
@@ -77,9 +73,7 @@ contract PropertyToken is ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable 
 
     // ============ Constructor ============
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address proxyAdmin_) {
-        if (proxyAdmin_ == address(0)) revert ZeroAddress();
-        _proxyAdmin = proxyAdmin_;
+    constructor() {
         _disableInitializers();
     }
 
@@ -97,7 +91,6 @@ contract PropertyToken is ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable 
         if (owner_ == address(0) || kycRegistry_ == address(0)) revert ZeroAddress();
         __ERC20_init(name_, symbol_);
         __Ownable_init(owner_);
-        __UUPSUpgradeable_init();
 
         propertyId    = propertyId_;
         totalValueUSD = totalValueUSD_;
@@ -250,8 +243,6 @@ contract PropertyToken is ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable 
 
     event ChangedPartition(bytes32 indexed fromPartition, bytes32 indexed toPartition, uint256 value);
 
-    function proxyAdmin() external view returns (address) { return _proxyAdmin; }
-
     // ============ Internal ============
 
     function _canTransfer(address from, address to, uint256 value) internal view returns (bytes1, bytes32) {
@@ -323,9 +314,6 @@ contract PropertyToken is ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable 
     /// @dev Stub — Pausable not inherited to keep contract lean; owner can add if needed
     function paused() internal pure returns (bool) { return false; }
 
-    function _authorizeUpgrade(address) internal view override {
-        if (msg.sender != _proxyAdmin) revert OnlyProxyAdmin();
-    }
 }
 
 interface IKYCRegistry {

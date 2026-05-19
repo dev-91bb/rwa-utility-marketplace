@@ -31,13 +31,14 @@ The platform is split into two layers:
 ```
 HybridProxyAdmin (Ownable2Step)
   │
-  ├── Property Layer
-  │     ├── PropertyToken × N  — one token contract per property listing
-  │     ├── PropertyFactory    — deploys new PropertyToken proxies
-  │     ├── PropertyRegistry   — tracks all deployed property contracts
+  ├── Property Layer (Beacon Proxy pattern)
+  │     ├── PropertyBeacon     — holds single implementation address for all property proxies
+  │     ├── PropertyToken × N  — BeaconProxy instances, all pointing to PropertyBeacon
+  │     ├── PropertyFactory    — deploys BeaconProxy per listing, registers in registry
+  │     ├── PropertyRegistry   — propertyId → proxy address, status tracking
   │     └── KYCRegistry        — shared investor whitelist
   │
-  └── Marketplace Layer
+  └── Marketplace Layer (UUPS Proxy pattern)
         ├── RWAToken           — platform utility/payment token (BEP-20)
         ├── RWACertificate     — NFT proof of investment (BEP-721)
         ├── RWAMarketplace     — handles all buying, selling, and renting
@@ -45,6 +46,10 @@ HybridProxyAdmin (Ownable2Step)
 ```
 
 All contracts use the **Hybrid Proxy pattern**. The upgrade admin address is baked into each contract's bytecode at deploy time as an immutable value. This means even if someone front-runs the initialization transaction, they cannot take over upgrade authority — the proxy admin is fixed before the contract is ever deployed.
+
+**Property Layer uses Beacon Proxy** — one `PropertyBeacon` holds the implementation address. All `PropertyToken` proxies read from it. Upgrading the beacon upgrades every property on the platform in a single transaction with O(1) gas cost, regardless of how many properties exist.
+
+**Marketplace Layer uses UUPS Proxy** — each contract manages its own upgrade authorization via the immutable `_proxyAdmin`.
 
 ---
 
@@ -64,9 +69,11 @@ All contracts use the **Hybrid Proxy pattern**. The upgrade admin address is bak
 
 ### Property Layer
 
+**`PropertyBeacon`** — Holds the single implementation address for all `PropertyToken` proxies. When the admin calls `HybridProxyAdmin.upgradeBeacon(beacon, newImpl)`, every property token on the platform is upgraded simultaneously in one transaction.
+
 **`PropertyToken`** — The core ownership token for each property. Built on ERC-1400, it enforces that only KYC-verified wallets can send or receive tokens. Tokens can be in an `unlocked` partition (freely tradeable) or a `locked` partition (frozen, used for vesting or regulatory holds). The total supply is fixed at deploy time and cannot be inflated.
 
-**`PropertyFactory`** — When admin creates a new listing, this contract deploys a fresh `PropertyToken` proxy pointing to the shared implementation contract. All property tokens share the same logic but have completely separate state (balances, supply, metadata).
+**`PropertyFactory`** — When admin creates a new listing, this contract deploys a fresh `BeaconProxy` pointing to `PropertyBeacon`. All property tokens share the same logic but have completely separate state (balances, supply, metadata).
 
 **`PropertyRegistry`** — Keeps a record of every deployed property token, mapping a human-readable property ID to its contract address. Also tracks listing status (Active, Delisted, Sold). The `getAllProxies()` function returns all addresses at once, which is used for batch upgrades.
 
@@ -115,10 +122,10 @@ All contracts use the **Hybrid Proxy pattern**. The upgrade admin address is bak
 
 ### Upgrading All Property Contracts
 ```solidity
-address[] memory proxies = registry.getAllProxies();
-proxyAdmin.batchUpgrade(proxies, newImplementation);
+// One call — upgrades every PropertyToken proxy on the platform
+proxyAdmin.upgradeBeacon(beaconAddress, newImplementation);
 ```
-One transaction upgrades every property token contract on the platform simultaneously.
+Gas cost is O(1) regardless of how many properties exist, because only the beacon's implementation slot is written.
 
 ### Auto-Detecting New Listings (Backend)
 ```
@@ -183,16 +190,17 @@ Admin freezes escrow → investigates → resolveEscrow(recipient, amount) or un
 ```
 1.  Deploy HybridProxyAdmin(ownerAddress)
 2.  Deploy KYCRegistry(ownerAddress)
-3.  Deploy PropertyToken implementation contract (proxyAdminAddress)
-4.  Deploy PropertyRegistry(ownerAddress)
-5.  Deploy PropertyFactory(propertyTokenImpl, registryAddress, ownerAddress)
-6.  Call PropertyRegistry.setFactory(factoryAddress)
-7.  Deploy RWAToken implementation → deploy ERC1967Proxy → initialize
-8.  Deploy RWACertificate implementation → deploy ERC1967Proxy → initialize
-9.  Deploy RWAMarketplace implementation → deploy ERC1967Proxy → initialize
-10. Grant MINTER_ROLE on RWACertificate to RWAMarketplace
-11. Grant VENDOR_ROLE on RWAMarketplace to verified vendors
-12. Set adminWallet and companyWallet on RWAMarketplace
+3.  Deploy PropertyToken implementation contract (no constructor args)
+4.  Deploy PropertyBeacon(propertyTokenImpl, hybridProxyAdminAddress)
+5.  Deploy PropertyRegistry(ownerAddress)
+6.  Deploy PropertyFactory(beaconAddress, registryAddress, ownerAddress)
+7.  Call PropertyRegistry.setFactory(factoryAddress)
+8.  Deploy RWAToken implementation → deploy ERC1967Proxy → initialize
+9.  Deploy RWACertificate implementation → deploy ERC1967Proxy → initialize
+10. Deploy RWAMarketplace implementation → deploy ERC1967Proxy → initialize
+11. Grant MINTER_ROLE on RWACertificate to RWAMarketplace
+12. Grant VENDOR_ROLE on RWAMarketplace to verified vendors
+13. Set adminWallet and companyWallet on RWAMarketplace
 ```
 
 ---

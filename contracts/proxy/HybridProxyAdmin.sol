@@ -7,6 +7,10 @@ interface IUUPSUpgradeable {
     function upgradeToAndCall(address newImplementation, bytes memory data) external payable;
 }
 
+interface IPropertyBeacon {
+    function upgradeTo(address newImplementation) external;
+}
+
 /**
  * @title HybridProxyAdmin
  * @notice Shared upgrade authority for all UUPS proxies - MEV/CPI-MP protected
@@ -17,10 +21,13 @@ contract HybridProxyAdmin is Ownable2Step {
     error NotContract(address addr);
 
     event UpgradeExecuted(address indexed proxy, address indexed implementation);
+    event BeaconUpgradeExecuted(address indexed beacon, address indexed implementation);
 
     constructor(address initialOwner) Ownable(initialOwner) {
         if (initialOwner == address(0)) revert ZeroAddress();
     }
+
+    // ============ UUPS Proxy Upgrades ============
 
     function upgrade(address proxy, address newImplementation) external onlyOwner {
         _validateUpgrade(proxy, newImplementation);
@@ -47,6 +54,18 @@ contract HybridProxyAdmin is Ownable2Step {
             IUUPSUpgradeable(proxies[i]).upgradeToAndCall(newImplementation, "");
             emit UpgradeExecuted(proxies[i], newImplementation);
         }
+    }
+
+    // ============ Beacon Upgrade (upgrades all PropertyToken proxies at once) ============
+
+    /// @notice Upgrade all PropertyToken BeaconProxies by updating the beacon implementation.
+    ///         One call upgrades every property on the platform simultaneously.
+    function upgradeBeacon(address beacon, address newImplementation) external onlyOwner {
+        if (beacon == address(0) || newImplementation == address(0)) revert ZeroAddress();
+        if (beacon.code.length == 0) revert NotContract(beacon);
+        if (newImplementation.code.length == 0) revert NotContract(newImplementation);
+        IPropertyBeacon(beacon).upgradeTo(newImplementation);
+        emit BeaconUpgradeExecuted(beacon, newImplementation);
     }
 
     function _validateUpgrade(address proxy, address newImplementation) internal view {
