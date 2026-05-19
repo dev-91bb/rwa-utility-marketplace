@@ -295,9 +295,9 @@ contract RWAMarketplace is
         if (propertyToken_ == address(0)) revert ZeroAddress();
         if (tokenAmount_ == 0 || price_ == 0) revert ZeroAmount();
 
-        // Verify KYC allows transfer to this contract
-        (bytes1 code,) = IPropertyToken(propertyToken_).canTransfer(address(this), tokenAmount_, "");
-        if (code != 0x51) revert TransferRestricted(code);
+        // KYC check disabled — re-enable when KYCRegistry is live
+        // (bytes1 code,) = IPropertyToken(propertyToken_).canTransfer(address(this), tokenAmount_, "");
+        // if (code != 0x51) revert TransferRestricted(code);
 
         // Pull property tokens into escrow
         IPropertyToken(propertyToken_).transferFromWithData(msg.sender, address(this), tokenAmount_, "");
@@ -331,9 +331,9 @@ contract RWAMarketplace is
         if (msg.sender == l.seller) revert SelfBuy();
         _requireFreshPrice(l.priceUpdatedAt);
 
-        // Verify buyer is KYC'd
-        (bytes1 code,) = IPropertyToken(l.propertyToken).canTransfer(msg.sender, l.tokenAmount, "");
-        if (code != 0x51) revert TransferRestricted(code);
+        // KYC check disabled — re-enable when KYCRegistry is live
+        // (bytes1 code,) = IPropertyToken(l.propertyToken).canTransfer(msg.sender, l.tokenAmount, "");
+        // if (code != 0x51) revert TransferRestricted(code);
 
         l.active = false;
         uint256 price = l.price;

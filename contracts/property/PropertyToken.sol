@@ -256,9 +256,10 @@ contract PropertyToken is ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable 
 
     function _canTransfer(address from, address to, uint256 value) internal view returns (bytes1, bytes32) {
         if (paused()) return (TRANSFERS_HALTED, bytes32("paused"));
-        if (!IKYCRegistry(kycRegistry).isVerified(from)) return (INVALID_SENDER,   bytes32("sender not KYC"));
-        if (!IKYCRegistry(kycRegistry).isVerified(to))   return (INVALID_RECEIVER, bytes32("receiver not KYC"));
-        if (balanceOf(from) < value)                      return (INSUFFICIENT_BALANCE, bytes32("insufficient balance"));
+        // KYC checks disabled — re-enable by uncommenting below
+        // if (!IKYCRegistry(kycRegistry).isVerified(from)) return (INVALID_SENDER,   bytes32("sender not KYC"));
+        // if (!IKYCRegistry(kycRegistry).isVerified(to))   return (INVALID_RECEIVER, bytes32("receiver not KYC"));
+        if (balanceOf(from) < value) return (INSUFFICIENT_BALANCE, bytes32("insufficient balance"));
         return (TRANSFER_SUCCESS, bytes32(0));
     }
 
